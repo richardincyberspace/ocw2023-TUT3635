@@ -47,7 +47,8 @@ python3 build.py --model_dir /models/Llama-2-13b-hf \
                 --use_gemm_plugin float16 \
                 --output_dir /tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/fp16/1-gpu/
 ```
-![OOM Image](images/oom.png)
+
+![](images/oom.png)
 
 Oops, we got an OOM error. 
 
@@ -80,8 +81,8 @@ python3 scripts/launch_triton_server.py  \
     --model_repo=all_models/gpt
 ```
 Now we should see the quantized LLaMA 2 13B model was loaded by Triton server and only 1 of the 2 GPUs was used. 
-!(images/quantized_nvdiai-smi.png)
-!(images/triton_ready.png)
+<images/quantized_nvdiai-smi.png>
+<images/triton_ready.png>
 
 Solution #2: Tensor Parallelism
 ```
