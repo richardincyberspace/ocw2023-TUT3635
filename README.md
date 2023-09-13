@@ -79,5 +79,31 @@ cd /tensorrt_llm_backend
 python3 scripts/launch_triton_server.py  \
     --model_repo=all_models/gpt
 ```
+Now we should see the quantized LLaMA 2 13B model was loaded by Triton server and only 1 of the 2 GPUs was used. 
+!(images/quantized_nvdiai-smi.png)
+!(images/triton_ready.png)
+
+Solution #2: Tensor Parallelism
+```
+python3 build.py --model_dir /models/Llama-2-13b-hf \
+                --dtype float16 \
+                --use_gpt_attention_plugin float16 \
+                --use_gemm_plugin float16 \
+                --output_dir /tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/fp16/2-gpu/ \
+                --world_size 2
+```
+Now we edit `/tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt` and point Triton server to the new model optimized for 2 GPUs.
+
+Next, we launch the Triton server with Tensor Parallelsm accross 2 GPUs.
+```
+python3 scripts/launch_triton_server.py \
+    --model_repo=all_models/gpt \
+    --world_size=2
+```
+Once the Triton server starts, we can see both GPUs are used this time. 
+!(images/quantized_nvdiai-smi_2gpus.png)
+
+
+
 
 
