@@ -16,7 +16,7 @@ Please download both files to `${HOME}/trt-llm/`
 3. Docker and NVDIA GPU Toolkit
 4. Llama 2 13B model in HuggingFace format downloaded to directory: `${HOME}/trt-llm/models/Llama-2-13b-hf`
 
-### Build Triton container with TRT-LLM backend
+### Build TRT-LLM backend with Triton server
 ```bash
 cd ${HOME}/trt-llm/
 tar xvf tensorrt_llm_backend_aug-release-v1.tar.gz
@@ -24,6 +24,60 @@ cd tensorrt_llm_backend_aug-release-v1
 tar xvf ../tensorrt_llm_aug-release-v1.tar.gz
 
 docker build -t tensort_llm_backend -f dockerfile/Dockerfile.trt_llm_backend .
+```
+Now we start the TRT-LLM backend container in interactive mode.  You will see a Bash command prompt once the container starts. 
+```
+docker run --gpus all -e LOCAL_USER_ID=`id -u ${USER}` --shm-size=8g --net=host --ulimit memlock=-1 --rm -it \
+        -v ${PWD}:/tensorrt_llm_backend \
+        -v $(dirname $PWD)/models:/models \
+        -w /tensorrt_llm_backend tensort_llm_backend bash
+```
+At the commmand prompt inside the container, we first install the required Python packages.
+```
+pip install /app/tensorrt_llm/build/tensorrt_llm*.whl
+pip install -r /app/tensorrt_llm/examples/llama/requirements.txt
+```
+
+Now we can build the LLaMA 2 13B TRT engine for a single GPU
+```
+cd /app/tensorrt_llm/examples/llama
+python3 build.py --model_dir /models/Llama-2-13b-hf \
+                --dtype float16 \
+                --use_gpt_attention_plugin float16 \
+                --use_gemm_plugin float16 \
+                --output_dir /tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/fp16/1-gpu/
+```
+![OOM Image](images/oom.png)
+
+Oops, we got an OOM error. 
+
+> Quiz:
+> 1. Why did we get OOM error?
+> 2. What are the possible solutions
+>
+
+Solution #1: Quantization using INT4
+```
+python3 build.py --model_dir /models/Llama-2-13b-hf \
+                --dtype float16 \
+                --use_gpt_attention_plugin float16 \
+                --use_gemm_plugin float16 \
+                --use_weight_only \
+                --weight_only_precision int4 \
+                --output_dir /tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/int4/1-gpu/
+```
+Before we launch the Triton server, we need to tell it where to find the TRT engine we just built. You can use your favorite editor to edit `/tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt` or use sed to replace ${engine_dir} with the path to our new TRT engine. 
+```
+sed -i "s@\${engine_dir}@/tensorrt_llm_backend/trt-models/Llama-2-7b-hf/trt_engines/fp16/1-gpu/@g" /tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt
+```
+
+Now we launch the Triton server with our quantized LLaMA 2 13B model. 
+```
+cd /tensorrt_llm_backend
+
+# Single GPU
+python3 scripts/launch_triton_server.py  \
+    --model_repo=all_models/gpt
 ```
 
 
