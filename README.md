@@ -5,8 +5,8 @@ In this guide, we will show you how to deploy NVIDIA Triton with TensorRT-LLM ba
 TensorRT-LLM is currently pre-GA and can be obtained through NVIDIA's Partners Portal.
 
 For this tutorial, you will need two files: 
-[tensorrt_llm_backend_aug-release-v1.tar.gz] (https://partners.nvidia.com/DocumentDetails?DocID=1105343)
-[tensorrt_llm_aug-release-v1.tar.gz (CUDA 12.1)] (https://partners.nvidia.com/DocumentDetails?DocID=1105342)
+[tensorrt_llm_backend_aug-release-v1.tar.gz](https://partners.nvidia.com/DocumentDetails?DocID=1105343)
+[tensorrt_llm_aug-release-v1.tar.gz (CUDA 12.1)](https://partners.nvidia.com/DocumentDetails?DocID=1105342)
 
 Please download both files to `${HOME}/trt-llm/`
 
@@ -48,6 +48,24 @@ python3 build.py --model_dir /models/Llama-2-13b-hf \
                 --output_dir /tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/fp16/1-gpu/
 ```
 
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+
 Oops, we got an OOM error. 
 
 ![](images/oom.png)
@@ -71,7 +89,7 @@ python3 build.py --model_dir /models/Llama-2-13b-hf \
 ```
 Before we launch the Triton server, we need to tell it where to find the TRT engine we just built. You can use your favorite editor to edit `/tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt` or use sed to replace ${engine_dir} with the path to our new TRT engine. 
 ```bash
-sed -i "s@\${engine_dir}@/tensorrt_llm_backend/trt-models/Llama-2-7b-hf/trt_engines/fp16/1-gpu/@g" /tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt
+sed -i "s@\${engine_dir}@/tensorrt_llm_backend/trt-models/Llama-2-13b-hf/trt_engines/fp16/1-gpu/@g" /tensorrt_llm_backend/all_models/gpt/tensorrt_llm/config.pbtxt
 ```
 
 Now we launch the Triton server with our quantized LLaMA 2 13B model. 
@@ -87,8 +105,8 @@ Now we should see the quantized LLaMA 2 13B model was loaded by Triton server an
 ![](images/triton_ready.png)
 ![](images/quantized_nvdiai-smi.png)
 
-
 Solution #2: Tensor Parallelism (3m)
+
 ```bash
 python3 build.py --model_dir /models/Llama-2-13b-hf \
                 --dtype float16 \
@@ -106,7 +124,8 @@ python3 scripts/launch_triton_server.py \
     --world_size=2
 ```
 Once the Triton server starts, we can see both GPUs are used this time. 
-!(images/quantized_nvdiai-smi_2gpus.png)
+
+![](images/nvdiai-smi_2gpus.png)
 
 
 
